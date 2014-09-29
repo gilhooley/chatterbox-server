@@ -17,14 +17,15 @@ var app = {
         context.selected = sanitizer.removeTags(this.val());
     });
   })
-  .ch
+  //.ch
     this.addRoom('lobby');
     //this.fetch();
     setInterval(function(){ context.fetch();}, 1000);
   },
 
-  server: 'https://api.parse.com/1/classes/chatterbox',
-
+  server: 'http://127.0.0.1:3000/classes/messages',
+// 'https://api.parse.com/1/classes/chatterbox'
+//
   selected: 'lobby',
 
   fetch:function(){
@@ -32,9 +33,9 @@ var app = {
       // always use this url
       url: this.server,
       type: 'GET',
-      data:{
-        order:'-createdAt'
-       },
+      //data:{
+        //order:'-createdAt'
+      // },
       contentType: 'application/json',
       success: function (data) {
         app.appendMessages(data.results);
@@ -53,13 +54,13 @@ var app = {
     $('#message').val('');
     msg.roomname = 'lobby';
     this.send(msg);
-    console.log(JSON.stringify(msg));
+    //console.log(JSON.stringify(msg));
   },
 
   send:function(msg){
     $.ajax({
       // always use this url
-      url: this.server,
+      url: this.server + '/send',
       type: 'POST',
       data: JSON.stringify(msg),
       contentType: 'application/json',
@@ -101,6 +102,7 @@ var app = {
 
   appendMessages:function(messageArray) {
     this.clearMessages();
+    //console.log(messageArray);
     for (var i = 0; i < messageArray.length; i++) {
       this.addMessage(messageArray[i]);
     }

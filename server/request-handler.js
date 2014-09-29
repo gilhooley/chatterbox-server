@@ -5,7 +5,10 @@
  * this file and include it in basic-server.js so that it actually works.
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 
-var handleRequest = function(request, response) {
+// {username: "us", text: "I am a message", roomname: "lobby"}
+var data =  {results:[]};
+
+exports.handleRequest = function(request, response) {
   /* the 'request' argument comes from nodes http module. It includes info about the
   request - such as what URL the browser is requesting. */
 
@@ -14,22 +17,55 @@ var handleRequest = function(request, response) {
 
   console.log("Serving request type " + request.method + " for url " + request.url);
 
-  var statusCode = 200;
+  // console.log(request.url);
+  // var statusCode = 200;
+  var headers = defaultCorsHeaders;
+  headers["Content-Type"] = "application/json";
+
+
+  if (request.method === "GET" && request.url === "/classes/messages") {
+    response.writeHead(200, headers);
+    response.end(JSON.stringify(data));
+
+  } else if (request.method === "POST" && request.url === "/classes/messages/send") {
+      headers['Content-Type'] = 'text/html';
+    response.writeHead(201, "OK", headers);
+    var msg = '';
+    request.on('data', function(chunk) {
+      msg += chunk;
+      console.log("chunk: " + chunk);
+    });
+    request.on('end', function() {
+      data.results.push(JSON.parse(msg));
+      console.log(data.results);
+      response.end();
+    });
+
+
+
+  } else if (request.method === "OPTIONS") {
+    response.writeHead(200, headers);
+    response.end();
+
+  } else {
+    response.writeHead(404, headers);
+    response.end("Sorry, failure");
+  }
+
 
   /* Without this line, this server wouldn't work. See the note
    * below about CORS. */
-  var headers = defaultCorsHeaders;
 
-  headers['Content-Type'] = "text/plain";
 
   /* .writeHead() tells our server what HTTP status code to send back */
-  response.writeHead(statusCode, headers);
+
 
   /* Make sure to always call response.end() - Node will not send
    * anything back to the client until you do. The string you pass to
    * response.end() will be the body of the response - i.e. what shows
    * up in the browser.*/
-  response.end("Hello, World!");
+
+
 };
 
 /* These headers will allow Cross-Origin Resource Sharing (CORS).
