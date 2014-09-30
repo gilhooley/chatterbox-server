@@ -6,6 +6,7 @@
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 
 // {username: "us", text: "I am a message", roomname: "lobby"}
+var _und = require('../node_modules/underscore/underscore.js');
 var data =  {results:[]};
 
 exports.handleRequest = function(request, response) {
@@ -17,18 +18,29 @@ exports.handleRequest = function(request, response) {
 
   console.log("Serving request type " + request.method + " for url " + request.url);
 
+
   // console.log(request.url);
   // var statusCode = 200;
   var headers = defaultCorsHeaders;
-  headers["Content-Type"] = "application/json";
 
-
-  if (request.method === "GET" && request.url === "/classes/messages") {
+  var sendMessages = function(room) {
+    headers["Content-Type"] = "application/json";
     response.writeHead(200, headers);
-    response.end(JSON.stringify(data));
+    if (room === undefined) {
+      response.end(JSON.stringify(data));
+    } else {
+      var roomData = _und.filter(data.results, function(msg) {
+        console.log(room === msg.roomname);
+        return msg.roomname === room;
+      });
+      var newData = JSON.stringify({results:roomData});
+      response.end(newData);
+    }
+  };
 
-  } else if (request.method === "POST" && request.url === "/classes/messages/send") {
-      headers['Content-Type'] = 'text/html';
+
+  var processMessage = function(room){
+    headers['Content-Type'] = 'text/html';
     response.writeHead(201, "OK", headers);
     var msg = '';
     request.on('data', function(chunk) {
@@ -36,21 +48,66 @@ exports.handleRequest = function(request, response) {
       console.log("chunk: " + chunk);
     });
     request.on('end', function() {
-      data.results.push(JSON.parse(msg));
-      console.log(data.results);
+      if (room === undefined) {
+        data.results.push(JSON.parse(msg));
+      } else {
+        msg = JSON.parse(msg);
+        msg.roomname = room;
+        data.results.push(msg);
+      }
       response.end();
     });
+  };
 
-
-
-  } else if (request.method === "OPTIONS") {
+  var sendOptions = function(){
     response.writeHead(200, headers);
     response.end();
+  };
 
-  } else {
+  var badRequest = function(){
     response.writeHead(404, headers);
     response.end("Sorry, failure");
+  };
+
+  var path = request.url.split('/').slice(1);
+
+  if (request.method === "GET") {
+    console.log(JSON.stringify(data));
+    if (path[0] === 'classes' && path[1] === 'messages') {
+      sendMessages();
+    } else if (path[0] === 'classes' && path.length === 2) {
+      var room = path[1];
+      sendMessages(room);
+    } else {
+      badRequest();
+    }
+  } else if (request.method === "POST") {
+    if (request.url === "/classes/messages/send") {
+      processMessage();
+    } else if (path[0] === "classes" && path.length === 2) {
+      var room = path[1];
+      processMessage(room);
+    } else {
+      badRequest();
+    }
+  } else if (request.method === "OPTIONS") {
+    sendOptions();
+  } else {
+    badRequest();
   }
+
+
+
+
+  // if (request.method === "GET" && request.url === "/classes/messages") {
+  //   sendMessages();
+  // } else if (request.method === "POST" && request.url === "/classes/messages/send") {
+  //   processMessage();
+  // } else if (request.method === "OPTIONS") {
+  //   sendOptions();
+  // } else {
+  //   badRequest();
+  // }
 
 
   /* Without this line, this server wouldn't work. See the note
