@@ -5,9 +5,32 @@
  * this file and include it in basic-server.js so that it actually works.
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 
-// {username: "us", text: "I am a message", roomname: "lobby"}
 var _und = require('../node_modules/underscore/underscore.js');
+var fs = require('fs');
 var data =  {results:[]};
+
+
+// fs.readFile('./server/messagedata.json', function(err){
+//   if (err) {
+//     fs.writeFile('./server/messagedata.json', JSON.stringify(data), function(err){
+//       console.log(err);
+//       console.log('made a new file');
+//     });
+//   }
+// });
+//
+
+fs.appendFile('./server/messagedata.txt', '', function() {
+   console.log('appended to file, if it existed');
+});
+
+
+fs.readFile('./server/messagedata.txt', 'utf8', function(err, data){
+  if (err) { console.log('not doing anything'); }
+  console.log(JSON.stringify(data));
+
+})
+
 
 exports.handleRequest = function(request, response) {
   /* the 'request' argument comes from nodes http module. It includes info about the
@@ -18,9 +41,6 @@ exports.handleRequest = function(request, response) {
 
   console.log("Serving request type " + request.method + " for url " + request.url);
 
-
-  // console.log(request.url);
-  // var statusCode = 200;
   var headers = defaultCorsHeaders;
 
   var sendMessages = function(room) {
@@ -30,7 +50,6 @@ exports.handleRequest = function(request, response) {
       response.end(JSON.stringify(data));
     } else {
       var roomData = _und.filter(data.results, function(msg) {
-        console.log(room === msg.roomname);
         return msg.roomname === room;
       });
       var newData = JSON.stringify({results:roomData});
@@ -45,17 +64,24 @@ exports.handleRequest = function(request, response) {
     var msg = '';
     request.on('data', function(chunk) {
       msg += chunk;
-      console.log("chunk: " + chunk);
     });
     request.on('end', function() {
-      if (room === undefined) {
-        data.results.push(JSON.parse(msg));
-      } else {
-        msg = JSON.parse(msg);
+      msg = JSON.parse(msg);
+
+      //appending to data
+      if (room !== undefined) {
         msg.roomname = room;
-        data.results.push(msg);
       }
+
+      //append to file
+      fs.appendFile('./server/messagedata.txt', JSON.stringify(msg) + ",", function(err) {
+        if (err) {console.log("nope");}
+        else {console.log('appended to file, if it existed');}
+      });
+
+      data.results.push(msg);
       response.end();
+
     });
   };
 
@@ -72,7 +98,6 @@ exports.handleRequest = function(request, response) {
   var path = request.url.split('/').slice(1);
 
   if (request.method === "GET") {
-    console.log(JSON.stringify(data));
     if (path[0] === 'classes' && path[1] === 'messages') {
       sendMessages();
     } else if (path[0] === 'classes' && path.length === 2) {
@@ -96,33 +121,6 @@ exports.handleRequest = function(request, response) {
     badRequest();
   }
 
-
-
-
-  // if (request.method === "GET" && request.url === "/classes/messages") {
-  //   sendMessages();
-  // } else if (request.method === "POST" && request.url === "/classes/messages/send") {
-  //   processMessage();
-  // } else if (request.method === "OPTIONS") {
-  //   sendOptions();
-  // } else {
-  //   badRequest();
-  // }
-
-
-  /* Without this line, this server wouldn't work. See the note
-   * below about CORS. */
-
-
-  /* .writeHead() tells our server what HTTP status code to send back */
-
-
-  /* Make sure to always call response.end() - Node will not send
-   * anything back to the client until you do. The string you pass to
-   * response.end() will be the body of the response - i.e. what shows
-   * up in the browser.*/
-
-
 };
 
 /* These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -136,3 +134,5 @@ var defaultCorsHeaders = {
   "access-control-allow-headers": "content-type, accept",
   "access-control-max-age": 10 // Seconds.
 };
+
+
