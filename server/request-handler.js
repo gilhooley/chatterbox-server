@@ -25,11 +25,16 @@ fs.appendFile('./server/messagedata.txt', '', function() {
 });
 
 
-fs.readFile('./server/messagedata.txt', 'utf8', function(err, data){
+fs.readFile('./server/messagedata.txt', 'utf-8', function(err, fileData){
   if (err) { console.log('not doing anything'); }
-  console.log(JSON.stringify(data));
-
-})
+  var savedMessages = fileData.split("-"); //get rid of last comma
+  savedMessages.pop();
+  for (var i = 0; i < savedMessages.length; i++) {
+    savedMessages[i] = JSON.parse(savedMessages[i]);
+    data.results.push(savedMessages[i]);
+  }
+  console.log(data.results);
+});
 
 
 exports.handleRequest = function(request, response) {
@@ -58,6 +63,7 @@ exports.handleRequest = function(request, response) {
   };
 
 
+
   var processMessage = function(room){
     headers['Content-Type'] = 'text/html';
     response.writeHead(201, "OK", headers);
@@ -72,9 +78,9 @@ exports.handleRequest = function(request, response) {
       if (room !== undefined) {
         msg.roomname = room;
       }
-
       //append to file
-      fs.appendFile('./server/messagedata.txt', JSON.stringify(msg) + ",", function(err) {
+      // msg.username + "," + msg.text + "," + msg.roomname + "-"
+      fs.appendFile('./server/messagedata.txt',JSON.stringify(msg) + '-', function(err) {
         if (err) {console.log("nope");}
         else {console.log('appended to file, if it existed');}
       });
