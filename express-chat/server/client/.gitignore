@@ -30,7 +30,6 @@ results
 ### NPM ###
 npm-debug.log
 node_modules
-express-chat/node_modules/*
 
 
 ### Bower ###
@@ -39,3 +38,9 @@ express-chat/node_modules/*
 
 ### PhPStorm ###
 .idea/
+
+# Floobits
+.floo
+.floobit
+.floo
+.flooignore
